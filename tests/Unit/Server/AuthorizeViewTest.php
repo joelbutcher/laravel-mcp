@@ -44,3 +44,65 @@ it('escapes the redirect uri', function (): void {
 
     expect($html)->not->toContain('<script>alert(1)</script>');
 });
+
+it('shows the host of a url client id', function (): void {
+    $this->withoutVite();
+
+    $html = renderAuthorize(Request::create('/oauth/authorize', 'GET', [
+        'client_id' => 'https://client.example.com/oauth/client.json',
+        'redirect_uri' => 'https://app.example.com/callback',
+    ]));
+
+    expect($html)->toContain('Published by <strong class="font-semibold">client.example.com</strong>');
+});
+
+it('does not show a client id host for other clients', function (string $clientId): void {
+    $this->withoutVite();
+
+    $html = renderAuthorize(Request::create('/oauth/authorize', 'GET', ['client_id' => $clientId]));
+
+    expect($html)->not->toContain('Published by');
+})->with([
+    'uuid' => '0199f0a4-3b8a-7c2e-9d5f-1a2b3c4d5e6f',
+    'http url' => 'http://client.example.com/oauth/client.json',
+]);
+
+it('shows the redirect host prominently', function (): void {
+    $this->withoutVite();
+
+    $html = renderAuthorize(Request::create('/oauth/authorize', 'GET', ['redirect_uri' => 'https://app.example.com/callback']));
+
+    expect($html)->toContain('You will be redirected to <strong class="font-semibold text-foreground">app.example.com</strong>');
+});
+
+it('warns when every registered redirect uri is localhost', function (array $redirectUris): void {
+    $this->withoutVite();
+
+    $html = renderAuthorize(Request::create('/oauth/authorize'), ['redirect_uris' => $redirectUris]);
+
+    expect($html)->toContain('can only send you back to this computer (localhost)');
+})->with([
+    'claude code' => [['http://localhost/callback', 'http://127.0.0.1/callback']],
+    'ipv6 loopback' => [['http://[::1]:8080/callback']],
+]);
+
+it('does not warn when a registered redirect uri is not localhost', function (array $redirectUris): void {
+    $this->withoutVite();
+
+    $html = renderAuthorize(Request::create('/oauth/authorize'), ['redirect_uris' => $redirectUris]);
+
+    expect($html)->not->toContain('can only send you back to this computer');
+})->with([
+    'https' => [['https://client.example.com/callback']],
+    'mixed' => [['http://localhost/callback', 'https://client.example.com/callback']],
+    'https localhost' => [['https://localhost/callback']],
+    'none' => [[]],
+]);
+
+it('escapes the client id host', function (): void {
+    $this->withoutVite();
+
+    $html = renderAuthorize(Request::create('/oauth/authorize', 'GET', ['client_id' => 'https://<b>x</b>.example/client.json']));
+
+    expect($html)->not->toContain('<b>x</b>');
+});
