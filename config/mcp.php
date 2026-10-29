@@ -40,6 +40,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Client ID Metadata Documents
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, OAuth clients may use an HTTPS URL as their client ID. The
+    | document at that URL is fetched, validated, and cached, then mapped to
+    | a public Passport client. Restrict the hosts you trust in production.
+    |
+    | Set "private_key_jwt" to "public" to accept clients such as ChatGPT that
+    | declare private_key_jwt, treating them as public clients using PKCE.
+    |
+    */
+
+    'client_id_metadata_documents' => [
+        'enabled' => (bool) env('MCP_CLIENT_ID_METADATA_DOCUMENTS', false),
+        'allowed_hosts' => ['*'],
+        'private_key_jwt' => 'reject',
+        'allow_loopback' => false,
+        'max_bytes' => 5_120,
+        'timeout' => 5,
+        'cache' => [
+            'store' => null,
+            'ttl' => 300,
+            'min_ttl' => 60,
+            'max_ttl' => 86_400,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Authorization Server
     |--------------------------------------------------------------------------
     |

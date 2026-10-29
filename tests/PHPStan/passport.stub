@@ -1,0 +1,64 @@
+<?php
+
+namespace League\OAuth2\Server\Entities;
+
+interface ClientEntityInterface
+{
+    public function getIdentifier(): string;
+}
+
+namespace League\OAuth2\Server\Repositories;
+
+use League\OAuth2\Server\Entities\ClientEntityInterface;
+
+interface ClientRepositoryInterface
+{
+    public function getClientEntity(string $clientIdentifier): ?ClientEntityInterface;
+
+    public function validateClient(string $clientIdentifier, ?string $clientSecret, ?string $grantType): bool;
+}
+
+namespace Laravel\Passport\Bridge;
+
+use League\OAuth2\Server\Entities\ClientEntityInterface;
+use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
+
+class Client implements ClientEntityInterface
+{
+    /**
+     * @param  non-empty-string  $identifier
+     * @param  string[]  $redirectUri
+     * @param  string[]  $grantTypes
+     */
+    public function __construct(string $identifier, ?string $name = null, array $redirectUri = [], bool $isConfidential = false, ?string $provider = null, array $grantTypes = []) {}
+
+    public function getIdentifier(): string {}
+}
+
+class ClientRepository implements ClientRepositoryInterface
+{
+    public function getClientEntity(string $clientIdentifier): ?ClientEntityInterface {}
+
+    public function validateClient(string $clientIdentifier, ?string $clientSecret, ?string $grantType): bool {}
+
+    public function getPersonalAccessClientEntity(string $provider): ?ClientEntityInterface {}
+}
+
+namespace Laravel\Passport;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Passport
+{
+    /**
+     * @var array<string, string>|null
+     */
+    public static $scopes = [];
+
+    /**
+     * @param  array<string, string>  $scopes
+     */
+    public static function tokensCan(array $scopes): void {}
+
+    public static function client(): Model {}
+}

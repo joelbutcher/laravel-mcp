@@ -1206,3 +1206,49 @@ it('advertises a custom registration route when registration is disabled', funct
         ->assertStatus(200)
         ->assertJsonPath('registration_endpoint', url('clients/register'));
 });
+
+it('advertises client id metadata document support when enabled', function (string $uri): void {
+    config()->set('mcp.client_id_metadata_documents.enabled', true);
+
+    Route::get('/oauth/authorize')->name('passport.authorizations.authorize');
+    Route::post('/oauth/token')->name('passport.token');
+
+    (new Registrar)->oauthRoutes(registration: false);
+
+    $this->getJson($uri)
+        ->assertOk()
+        ->assertJsonPath('client_id_metadata_document_supported', true)
+        ->assertJsonPath('token_endpoint_auth_methods_supported', ['none', 'client_secret_basic', 'client_secret_post'])
+        ->assertJsonMissingPath('registration_endpoint');
+})->with([
+    '/.well-known/oauth-authorization-server',
+    '/.well-known/oauth-authorization-server/mcp/weather',
+]);
+
+it('advertises client id metadata documents alongside dynamic client registration', function (): void {
+    config()->set('mcp.client_id_metadata_documents.enabled', true);
+
+    Route::get('/oauth/authorize')->name('passport.authorizations.authorize');
+    Route::post('/oauth/token')->name('passport.token');
+
+    (new Registrar)->oauthRoutes();
+
+    $this->getJson('/.well-known/oauth-authorization-server')
+        ->assertOk()
+        ->assertJsonPath('client_id_metadata_document_supported', true)
+        ->assertJsonPath('registration_endpoint', url('oauth/register'));
+});
+
+it('does not advertise client id metadata document support by default', function (string $uri): void {
+    Route::get('/oauth/authorize')->name('passport.authorizations.authorize');
+    Route::post('/oauth/token')->name('passport.token');
+
+    (new Registrar)->oauthRoutes();
+
+    $this->getJson($uri)
+        ->assertOk()
+        ->assertJsonMissingPath('client_id_metadata_document_supported');
+})->with([
+    '/.well-known/oauth-authorization-server',
+    '/.well-known/oauth-authorization-server/mcp/weather',
+]);

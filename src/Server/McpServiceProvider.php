@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Laravel\Mcp\Server;
 
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,10 @@ use Laravel\Mcp\Console\Commands\StartCommand;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Server\Middleware\AddAuthorizationFramingHeaders;
 use Laravel\Mcp\Server\Middleware\AddWwwAuthenticateHeader;
+use Laravel\Mcp\Server\OAuth\ClientIdMetadataClientRepository;
+use Laravel\Mcp\Server\OAuth\ClientIdMetadataDocumentResolver;
+use Laravel\Mcp\Server\OAuth\PassportClients;
+use Laravel\Passport\Bridge\ClientRepository;
 
 class McpServiceProvider extends ServiceProvider
 {
@@ -31,6 +36,8 @@ class McpServiceProvider extends ServiceProvider
         $this->app->singleton('mcp.sdk', fn (): string => (string) file_get_contents(__DIR__.'/../../resources/js/mcp-sdk.min.js'));
 
         $this->mergeConfigFrom(__DIR__.'/../../config/mcp.php', 'mcp');
+
+        $this->registerClientIdMetadataDocuments();
     }
 
     public function boot(): void
@@ -136,6 +143,15 @@ class McpServiceProvider extends ServiceProvider
     protected function registerViews(): void
     {
         $this->loadViewsFrom(__DIR__.'/../../resources/views/mcp', 'mcp');
+    }
+
+    protected function registerClientIdMetadataDocuments(): void
+    {
+        $this->app->extend(ClientRepository::class, fn (ClientRepository $repository, Application $app): ClientRepository => new ClientIdMetadataClientRepository(
+            $repository,
+            $app->make(ClientIdMetadataDocumentResolver::class),
+            $app->make(PassportClients::class),
+        ));
     }
 
     protected function registerMcpScope(): void
