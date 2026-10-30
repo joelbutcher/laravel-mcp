@@ -5,6 +5,9 @@ parameters:
 
   level: 8
 
+  scanFiles:
+    - tests/PHPStan/passport.stub
+
   treatPhpDocTypesAsCertain: false
 
   ignoreErrors:
