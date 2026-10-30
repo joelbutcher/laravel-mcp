@@ -69,11 +69,26 @@
                     This application will be able to:<br/>Use available MCP functionality.
                 </p>
 
+                @php($clientIdHost = str_starts_with((string) request()->query('client_id'), 'https://') ? parse_url((string) request()->query('client_id'), PHP_URL_HOST) : null)
+                @if ($clientIdHost)
+                <p class="text-sm text-center">
+                    Published by <strong class="font-semibold">{{ $clientIdHost }}</strong>
+                </p>
+                @endif
+
                 @php($redirectUri = request()->query('redirect_uri', $client->redirect_uris[0] ?? null))
                 @if ($redirectUri)
                 <p class="text-xs text-muted-foreground text-center break-all">
-                    You will be redirected to {{ $redirectUri }}
+                    You will be redirected to <strong class="font-semibold text-foreground">{{ parse_url((string) $redirectUri, PHP_URL_HOST) ?: $redirectUri }}</strong><br/>{{ $redirectUri }}
                 </p>
+                @endif
+
+                @php($redirectUriPolicy = new \Laravel\Mcp\Server\OAuth\RedirectUriPolicy)
+                @php($registeredRedirectUris = array_values(array_filter((array) ($client->redirect_uris ?? []), 'is_string')))
+                @if ($registeredRedirectUris !== [] && collect($registeredRedirectUris)->every(fn (string $uri): bool => $redirectUriPolicy->isLocalhost($uri)))
+                <div role="alert" class="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-xs text-center">
+                    This application can only send you back to this computer (localhost). Only continue if you started this connection from an application running on this device.
+                </div>
                 @endif
 
                 @if ($client->client_uri ?? null)
